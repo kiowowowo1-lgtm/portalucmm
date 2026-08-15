@@ -27,7 +27,7 @@
         </form>
     </div>
 
-    <!-- APP CONTAINER (Dito maglo-load ang layouts depende sa role) -->
+    <!-- APP CONTAINER -->
     <div id="app-container" class="hidden w-full h-full"></div>
 
     <!-- IMPORT LAYOUTS AT LOGIN HANDLER -->
@@ -47,15 +47,18 @@
             const errorMsg = document.getElementById('error-msg');
             const loginBtn = document.getElementById('login-btn');
 
-            // I-hide muna ang error at i-disable ang button habang nag-a-authenticate
             errorMsg.classList.add('hidden');
             errorMsg.textContent = "";
             loginBtn.disabled = true;
             loginBtn.textContent = "Checking...";
 
             try {
+                // Binago sa text/plain header para maiwasan ang CORS blocking sa browser
                 const res = await fetch(WEB_APP_URL, {
                     method: "POST",
+                    headers: {
+                        "Content-Type": "text/plain;charset=utf-8"
+                    },
                     body: JSON.stringify({ username, password })
                 });
                 
@@ -68,7 +71,6 @@
 
                     const user = result.user;
 
-                    // Switch case para sa iba't ibang layout depende sa role mula sa Google Sheet
                     switch (user.role) {
                         case 'BranchManager':
                             renderBmLayout(appContainer, user);
@@ -89,17 +91,15 @@
                             appContainer.innerHTML = `<div class="p-6 text-red-600 font-bold">Unauthorized Role: ${user.role}</div>`;
                     }
                 } else {
-                    // Ipakita ang eksaktong error message mula sa Apps Script (hal. Invalid username or password)
                     errorMsg.textContent = result.message || "Invalid username or password.";
                     errorMsg.classList.remove('hidden');
                 }
 
             } catch (err) {
-                console.error(err);
+                console.error("Login Error:", err);
                 errorMsg.textContent = "May problema sa koneksyon sa database o web app URL.";
                 errorMsg.classList.remove('hidden');
             } finally {
-                // Ibalik sa dati ang button
                 loginBtn.disabled = false;
                 loginBtn.textContent = "Login";
             }
