@@ -20,8 +20,10 @@
                 <label class="block text-gray-700 text-sm font-bold mb-2">Password</label>
                 <input type="password" id="password" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
-            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">Login</button>
-            <p id="error-msg" class="text-red-500 text-xs mt-4 text-center hidden">Invalid credentials or sheet connection error.</p>
+            <button type="submit" id="login-btn" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition font-medium">Login</button>
+            
+            <!-- Error message container -->
+            <div id="error-msg" class="mt-4 p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg text-center hidden"></div>
         </form>
     </div>
 
@@ -36,14 +38,20 @@
         import { renderItLayout } from './itLayout.js';
         import { renderHrLayout } from './hrLayout.js';
 
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzXx4Vp68TvQgA4eJVg5AZn7GgnYR9RB3PwCIkOP81o9VMh7o6N7LNz5CG0f90BfY7x/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyntBDqIAmqFzfXXHDMQDXfdXO-3wxbnMOa3ZJMVanArNdAt9XsNqNfQ8L0HfKE92pH/exec";
 
         window.handleLogin = async function(event) {
             event.preventDefault();
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
             const errorMsg = document.getElementById('error-msg');
+            const loginBtn = document.getElementById('login-btn');
+
+            // I-hide muna ang error at i-disable ang button habang nag-a-authenticate
             errorMsg.classList.add('hidden');
+            errorMsg.textContent = "";
+            loginBtn.disabled = true;
+            loginBtn.textContent = "Checking...";
 
             try {
                 const res = await fetch(WEB_APP_URL, {
@@ -81,14 +89,19 @@
                             appContainer.innerHTML = `<div class="p-6 text-red-600 font-bold">Unauthorized Role: ${user.role}</div>`;
                     }
                 } else {
-                    errorMsg.textContent = result.message;
+                    // Ipakita ang eksaktong error message mula sa Apps Script (hal. Invalid username or password)
+                    errorMsg.textContent = result.message || "Invalid username or password.";
                     errorMsg.classList.remove('hidden');
                 }
 
             } catch (err) {
                 console.error(err);
-                errorMsg.textContent = "Connection error to database.";
+                errorMsg.textContent = "May problema sa koneksyon sa database o web app URL.";
                 errorMsg.classList.remove('hidden');
+            } finally {
+                // Ibalik sa dati ang button
+                loginBtn.disabled = false;
+                loginBtn.textContent = "Login";
             }
         }
     </script>
