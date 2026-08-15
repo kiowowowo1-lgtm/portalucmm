@@ -1,104 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Company Portal Login</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-900 font-sans min-h-screen">
-  <div id="root"></div>
+<body class="bg-gray-100 h-screen flex items-center justify-center">
 
-  <!-- Mga Layout Files -->
-  <script type="text/babel" src="pmLayout.js"></script>
-  <script type="text/babel" src="bmLayout.js"></script>
-  <script type="text/babel" src="saLayout.js"></script>
-  <script type="text/babel" src="itLayout.js"></script>
-  <script type="text/babel" src="direkLayout.js"></script>
-
-  <script type="text/babel">
-    const { useState } = React;
-
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwwAkPfl23aeLxPBlVvrBR7pk4VsiXhGA60BEbbiiQCeyEjWh03X4z5pysafLZksgTd/exec";
-
-    function App() {
-      const [currentUser, setCurrentUser] = useState(() => {
-        const saved = localStorage.getItem("app_user");
-        return saved ? JSON.parse(saved) : null;
-      });
-
-      const [usernameInput, setUsernameInput] = useState("");
-      const [passwordInput, setPasswordInput] = useState("");
-      const [loginError, setLoginError] = useState("");
-      const [loading, setLoading] = useState(false);
-
-      const handleLoginSubmit = async (e) => {
-        e.preventDefault();
-        setLoginError("");
-        setLoading(true);
-
-        try {
-          const response = await fetch(SCRIPT_URL, {
-            method: "POST",
-            // TANGGALIN ANG mode: "no-cors" DITO PARA BASA ANG JSON RESPONSE
-            body: JSON.stringify({
-              action: "login",
-              username: usernameInput,
-              password: passwordInput
-            })
-          });
-          
-          const result = await response.json();
-
-          if (result.status === "success") {
-            localStorage.setItem("app_user", JSON.stringify(result.user));
-            setCurrentUser(result.user);
-          } else {
-            setLoginError(result.message || "Maling username o password!");
-          }
-        } catch (err) {
-          setLoginError("Login Error: Subukan ulit o i-check ang koneksyon.");
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      const handleLogout = () => {
-        localStorage.removeItem("app_user");
-        setCurrentUser(null);
-      };
-
-      if (!currentUser) {
-        return (
-          <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
-              <h1 className="text-2xl font-bold text-gray-800 text-center mb-6">Company Portal</h1>
-              {loginError && <div className="mb-4 p-3 bg-red-100 text-red-700 text-xs rounded">{loginError}</div>}
-              <form onSubmit={handleLoginSubmit} className="flex flex-col gap-4">
-                <input type="text" placeholder="Username" value={usernameInput} onChange={e => setUsernameInput(e.target.value)} className="p-2 border rounded w-full" required />
-                <input type="password" placeholder="Password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="p-2 border rounded w-full" required />
-                <button type="submit" disabled={loading} className="bg-blue-600 text-white py-2 rounded">{loading ? "Nag-veverify..." : "Log In"}</button>
-              </form>
+    <!-- LOGIN CONTAINER -->
+    <div id="login-container" class="bg-white p-8 rounded-lg shadow-md w-96">
+        <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">CRM Login</h2>
+        <form id="login-form" onsubmit="handleLogin(event)">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Username</label>
+                <input type="text" id="username" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
-          </div>
-        );
-      }
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+                <input type="password" id="password" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">Login</button>
+            <p id="error-msg" class="text-red-500 text-xs mt-4 text-center hidden">Invalid credentials or sheet connection error.</p>
+        </form>
+    </div>
 
-      const role = String(currentUser.role || "").trim().toLowerCase();
+    <!-- APP CONTAINER (Dito maglo-load ang layouts depende sa role) -->
+    <div id="app-container" class="hidden w-full h-full"></div>
 
-      if (role === "pagemanager") return <window.pmLayout currentUser={currentUser} onLogout={handleLogout} />;
-      if (role === "branchmanager") return <window.bmLayout currentUser={currentUser} onLogout={handleLogout} />;
-      if (role === "serviceadvisor") return <window.saLayout currentUser={currentUser} onLogout={handleLogout} />;
-      if (role === "it") return <window.itLayout currentUser={currentUser} onLogout={handleLogout} />;
-      if (role === "director") return <window.direkLayout currentUser={currentUser} onLogout={handleLogout} />;
-      
-      return <div className="text-white p-10">Role "{role}" not recognized. <button onClick={handleLogout}>Logout</button></div>;
-    }
+    <!-- IMPORT LAYOUTS AT LOGIN HANDLER -->
+    <script type="module">
+        import { renderBmLayout } from './bmLayout.js';
+        import { renderPmLayout } from './pmLayout.js';
+        import { renderSaLayout } from './saLayout.js';
+        import { renderItLayout } from './itLayout.js';
+        import { renderHrLayout } from './hrLayout.js';
 
-    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-  </script>
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzXx4Vp68TvQgA4eJVg5AZn7GgnYR9RB3PwCIkOP81o9VMh7o6N7LNz5CG0f90BfY7x/exec";
+
+        window.handleLogin = async function(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const errorMsg = document.getElementById('error-msg');
+            errorMsg.classList.add('hidden');
+
+            try {
+                const res = await fetch(WEB_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const result = await res.json();
+
+                if (result.status === "success") {
+                    document.getElementById('login-container').classList.add('hidden');
+                    const appContainer = document.getElementById('app-container');
+                    appContainer.classList.remove('hidden');
+
+                    const user = result.user;
+
+                    // Switch case para sa iba't ibang layout depende sa role mula sa Google Sheet
+                    switch (user.role) {
+                        case 'BranchManager':
+                            renderBmLayout(appContainer, user);
+                            break;
+                        case 'PageManager':
+                            renderPmLayout(appContainer, user);
+                            break;
+                        case 'ServiceAdvisor':
+                            renderSaLayout(appContainer, user);
+                            break;
+                        case 'IT':
+                            renderItLayout(appContainer, user);
+                            break;
+                        case 'HR':
+                            renderHrLayout(appContainer, user);
+                            break;
+                        default:
+                            appContainer.innerHTML = `<div class="p-6 text-red-600 font-bold">Unauthorized Role: ${user.role}</div>`;
+                    }
+                } else {
+                    errorMsg.textContent = result.message;
+                    errorMsg.classList.remove('hidden');
+                }
+
+            } catch (err) {
+                console.error(err);
+                errorMsg.textContent = "Connection error to database.";
+                errorMsg.classList.remove('hidden');
+            }
+        }
+    </script>
 </body>
 </html>
