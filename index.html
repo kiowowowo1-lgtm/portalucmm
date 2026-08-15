@@ -22,8 +22,8 @@
   <script type="text/babel">
     const { useState } = React;
 
-    // Gamitin ang bagong URL na ito
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwwAkPfl23aeLxPBlVvrBR7pk4VsiXhGA60BEbbiiQCeyEjWh03X4z5pysafLZksgTd/exec"
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwwAkPfl23aeLxPBlVvrBR7pk4VsiXhGA60BEbbiiQCeyEjWh03X4z5pysafLZksgTd/exec";
+
     function App() {
       const [currentUser, setCurrentUser] = useState(() => {
         const saved = localStorage.getItem("app_user");
@@ -43,7 +43,7 @@
         try {
           const response = await fetch(SCRIPT_URL, {
             method: "POST",
-            mode: "no-cors", // Minsan kailangan ito para sa Apps Script
+            // TANGGALIN ANG mode: "no-cors" DITO PARA BASA ANG JSON RESPONSE
             body: JSON.stringify({
               action: "login",
               username: usernameInput,
@@ -51,8 +51,6 @@
             })
           });
           
-          // Dahil sa 'no-cors', hindi natin mababasa ang JSON response nang direkta kung minsan.
-          // Kung magka-problema, tanggalin ang mode: "no-cors"
           const result = await response.json();
 
           if (result.status === "success") {
@@ -62,7 +60,7 @@
             setLoginError(result.message || "Maling username o password!");
           }
         } catch (err) {
-          setLoginError("Login Error: Pakisiguro na 'Anyone' ang access ng Web App.");
+          setLoginError("Login Error: Subukan ulit o i-check ang koneksyon.");
         } finally {
           setLoading(false);
         }
@@ -89,7 +87,6 @@
         );
       }
 
-      // Role check (Case insensitive)
       const role = String(currentUser.role || "").trim().toLowerCase();
 
       if (role === "pagemanager") return <window.pmLayout currentUser={currentUser} onLogout={handleLogout} />;
