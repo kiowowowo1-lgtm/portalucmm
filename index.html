@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Portal Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-slate-900 font-sans min-h-screen">
+  <div id="root"></div>
+
+  <!-- Mga Layout Files -->
+  <script type="text/babel" src="pmLayout.js"></script>
+  <script type="text/babel" src="bmLayout.js"></script>
+  <script type="text/babel" src="saLayout.js"></script>
+  <script type="text/babel" src="itLayout.js"></script>
+  <script type="text/babel" src="direkLayout.js"></script>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    // Gamitin ang bagong URL na ito
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz6KDBwjLDoiPq5hiXZSSvN-FKQDtzUv-pEp91bAKaFNfHauiz_ybqGftcVI6AGfKqR/exec";
+
+    function App() {
+      const [currentUser, setCurrentUser] = useState(() => {
+        const saved = localStorage.getItem("app_user");
+        return saved ? JSON.parse(saved) : null;
+      });
+
+      const [usernameInput, setUsernameInput] = useState("");
+      const [passwordInput, setPasswordInput] = useState("");
+      const [loginError, setLoginError] = useState("");
+      const [loading, setLoading] = useState(false);
+
+      const handleLoginSubmit = async (e) => {
+        e.preventDefault();
+        setLoginError("");
+        setLoading(true);
+
+        try {
+          const response = await fetch(SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors", // Minsan kailangan ito para sa Apps Script
+            body: JSON.stringify({
+              action: "login",
+              username: usernameInput,
+              password: passwordInput
+            })
+          });
+          
+          // Dahil sa 'no-cors', hindi natin mababasa ang JSON response nang direkta kung minsan.
+          // Kung magka-problema, tanggalin ang mode: "no-cors"
+          const result = await response.json();
+
+          if (result.status === "success") {
+            localStorage.setItem("app_user", JSON.stringify(result.user));
+            setCurrentUser(result.user);
+          } else {
+            setLoginError(result.message || "Maling username o password!");
+          }
+        } catch (err) {
+          setLoginError("Login Error: Pakisiguro na 'Anyone' ang access ng Web App.");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleLogout = () => {
+        localStorage.removeItem("app_user");
+        setCurrentUser(null);
+      };
+
+      if (!currentUser) {
+        return (
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
+              <h1 className="text-2xl font-bold text-gray-800 text-center mb-6">Company Portal</h1>
+              {loginError && <div className="mb-4 p-3 bg-red-100 text-red-700 text-xs rounded">{loginError}</div>}
+              <form onSubmit={handleLoginSubmit} className="flex flex-col gap-4">
+                <input type="text" placeholder="Username" value={usernameInput} onChange={e => setUsernameInput(e.target.value)} className="p-2 border rounded w-full" required />
+                <input type="password" placeholder="Password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="p-2 border rounded w-full" required />
+                <button type="submit" disabled={loading} className="bg-blue-600 text-white py-2 rounded">{loading ? "Nag-veverify..." : "Log In"}</button>
+              </form>
+            </div>
+          </div>
+        );
+      }
+
+      // Role check (Case insensitive)
+      const role = String(currentUser.role || "").trim().toLowerCase();
+
+      if (role === "pagemanager") return <window.pmLayout currentUser={currentUser} onLogout={handleLogout} />;
+      if (role === "branchmanager") return <window.bmLayout currentUser={currentUser} onLogout={handleLogout} />;
+      if (role === "serviceadvisor") return <window.saLayout currentUser={currentUser} onLogout={handleLogout} />;
+      if (role === "it") return <window.itLayout currentUser={currentUser} onLogout={handleLogout} />;
+      if (role === "director") return <window.direkLayout currentUser={currentUser} onLogout={handleLogout} />;
+      
+      return <div className="text-white p-10">Role "{role}" not recognized. <button onClick={handleLogout}>Logout</button></div>;
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
